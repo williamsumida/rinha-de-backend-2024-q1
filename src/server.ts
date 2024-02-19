@@ -1,5 +1,7 @@
 import fastify, { FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
+import { PostgresAccountRepository } from "./PostgresAccountRepository";
+import { validateClientId, validateTransactionBody } from "./validations";
 
 const envToLogger = {
   transport: {
@@ -13,20 +15,25 @@ const envToLogger = {
 
 const app = fastify({ logger: envToLogger });
 
+const repository = new PostgresAccountRepository();
+
 app.post(
   "/clientes/:id/transacoes",
   async (request: FastifyRequest, reply: FastifyReply) => {
-    const clientIdSchema = z.object({ id: z.coerce.number().int() });
-    const transactionDataBodySchema = z.object({
-      valor: z.number().positive(),
-      tipo: z.enum(["c", "d"]),
-      descricao: z.string().min(1).max(10),
-    });
+    const id = validateClientId(request.params);
+    const body = validateTransactionBody(request.body);
 
-    const { id } = clientIdSchema.parse(request.params);
-    const { valor, tipo, descricao } = transactionDataBodySchema.parse(
-      request.body,
-    );
+    if (id === null || body === null) {
+      return reply.code(400).send();
+    }
+
+    const { valor, tipo, descricao } = body;
+
+    await repository.createTransaction(id, {
+      value: valor,
+      type: tipo,
+      description: descricao,
+    });
 
     const replyData = {
       limite: 100000,
@@ -40,30 +47,24 @@ app.post(
 app.get(
   "/clientes/:id/extrato",
   async (request: FastifyRequest, reply: FastifyReply) => {
-    const clientIdSchema = z.object({ id: z.coerce.number().int() });
-    const { id } = clientIdSchema.parse(request.params);
-    app.log.info(id);
+    const id = validateClientId(request.params);
+    if (id === null) {
+      return reply.code(400).send();
+    }
+
+    const account = await repository.getExtract(id);
+
+    if (account == null) {
+      return reply.code(404).send();
+    }
 
     const extrato = {
       saldo: {
-        total: -9098,
-        data_extrato: "2024-01-17T02:34:41.217753Z",
-        limite: 100000,
+        total: account?.balance,
+        data_extrato: account?.extract_date,
+        limite: account?.limit_amount,
       },
-      ultimas_transacoes: [
-        {
-          valor: 10,
-          tipo: "c",
-          descricao: "descricao",
-          realizada_em: "2024-01-17T02:34:38.543030Z",
-        },
-        {
-          valor: 90000,
-          tipo: "d",
-          descricao: "descricao",
-          realizada_em: "2024-01-17T02:34:38.543030Z",
-        },
-      ],
+      ultimas_transacoes: account?.transactions,
     };
 
     reply.send(extrato);
@@ -73,8 +74,8 @@ app.get(
 app
   .listen({
     host: "0.0.0.0",
-    port: 3000,
+    port: 9999,
   })
   .then(() => {
-    app.log.info(`🚀 Rinha de Backend Running on port 9999!`);
+    app.log.info(`🚀 Rinha de Backend Running on port 3000!`);
   });
