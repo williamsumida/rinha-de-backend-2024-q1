@@ -12,5 +12,6 @@ RUN npm run build
 FROM node:18-alpine AS prod
 COPY --from=build /api/build ./build
 COPY --from=build /api/node_modules ./node_modules
+COPY --from=build /api/package.json ./package.json
 
 EXPOSE 3000
