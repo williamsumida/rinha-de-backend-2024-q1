@@ -4,7 +4,7 @@ export class Account {
   public limit_amount: number;
   public balance: number;
   public transactions: Array<Transaction>;
-  public extract_date: Date;
+  public extract_date: Date | undefined;
 
   constructor(
     id: number,
@@ -12,7 +12,7 @@ export class Account {
     limit_amount: number,
     balance: number,
     transactions: Array<Transaction>,
-    extract_date: Date,
+    extract_date?: Date,
   ) {
     this.id = id;
     this.name = name;

@@ -2,6 +2,7 @@ import fastify, { FastifyRequest, FastifyReply } from "fastify";
 import { z } from "zod";
 import { PostgresAccountRepository } from "./PostgresAccountRepository";
 import { validateClientId, validateTransactionBody } from "./validations";
+import { errors } from "./errors";
 
 const envToLogger = {
   transport: {
@@ -29,18 +30,24 @@ app.post(
 
     const { valor, tipo, descricao } = body;
 
-    await repository.createTransaction(id, {
+    const { account, error } = await repository.createTransaction(id, {
       value: valor,
       type: tipo,
       description: descricao,
     });
 
-    const replyData = {
-      limite: 100000,
-      saldo: -9098,
-    };
+    if (error === errors.ACCOUNT_NOT_FOUND) {
+      return reply.code(404).send();
+    }
 
-    reply.send(replyData);
+    if (error === errors.INVALID_TRANSACTION) {
+      return reply.code(422).send();
+    }
+
+    reply.send({
+      limite: account.limit_amount,
+      saldo: account.balance,
+    });
   },
 );
 

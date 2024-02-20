@@ -3,7 +3,7 @@ CREATE TABLE accounts (
 	name VARCHAR(50) NOT NULL,
 	limit_amount INTEGER NOT NULL,
 	balance INTEGER NOT NULL,
-  transactions JSON
+  transactions JSONB
 );
 
 CREATE INDEX idx_accounts ON accounts(id);
