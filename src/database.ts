@@ -1,7 +1,7 @@
 import postgres from "postgres";
 
 const config = {
-  host: "localhost",
+  host: "postgres",
   port: 5432,
   database: "postgres",
   username: "postgres",

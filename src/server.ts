@@ -81,7 +81,7 @@ app.get(
 app
   .listen({
     host: "0.0.0.0",
-    port: 9999,
+    port: 3000,
   })
   .then(() => {
     app.log.info(`🚀 Rinha de Backend Running on port 3000!`);
