@@ -129,4 +129,4 @@ build
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-/stress-test/results/*
+/stress-test/user-files/results/*
