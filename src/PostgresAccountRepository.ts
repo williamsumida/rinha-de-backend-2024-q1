@@ -1,23 +1,30 @@
-import { db } from "./database";
 import { AccountRepository } from "./AccountRepository";
 import { Account, Transaction } from "./entities";
 import { errors } from "./errors";
+import { app } from "./server";
+import { client } from "./database";
+//import { client } from "./database";
 
 export class PostgresAccountRepository implements AccountRepository {
   async createTransaction(clientId: number, transaction: Transaction) {
-    return await db.begin(async (db) => {
-      let result = await db`
+    try {
+      await client.query("BEGIN ISOLATION LEVEL SERIALIZABLE;");
+      //await client.query("BEGIN;");
+      const result = await client.query(
+        `
         SELECT *
-        FROM accounts WHERE id = ${clientId} 
+        FROM accounts WHERE id = $1
         FOR UPDATE;
-    `;
+      `,
+        [clientId],
+      );
 
-      if (result.length == 0) {
-        return { account: null, error: errors.ACCOUNT_NOT_FOUND };
-      }
+      //if (result.rows.length == 0) {
+      //  return { account: null, error: errors.ACCOUNT_NOT_FOUND };
+      //}
 
-      const { id, name, limit_amount, balance, transactions } = result[0];
-      let account = new Account(id, name, limit_amount, balance, transactions);
+      const { id, name, limit_amount, balance } = result.rows[0];
+      let account = new Account(id, name, limit_amount, balance);
 
       if (transaction.type === "c") {
         account = this.handleCreditTransaction(account, transaction);
@@ -29,17 +36,39 @@ export class PostgresAccountRepository implements AccountRepository {
         return { account: null, error: errors.INVALID_TRANSACTION };
       }
 
-      //@ts-ignore
-      await db`
-        UPDATE accounts
-        SET 
-          limit_amount = ${account.limit_amount},
-          balance = ${account.balance},
-          transactions = ${account.transactions}
-        WHERE id = ${clientId};
-      `;
+      await Promise.all([
+        client.query(
+          `
+          UPDATE accounts
+          SET 
+            limit_amount = $1,
+            balance = $2
+          WHERE id = $3;
+        `,
+          [account.limit_amount, account.balance, clientId],
+        ),
+
+        client.query(
+          `
+          INSERT INTO transactions(account_id, value, type, description)
+          VALUES($1, $2, $3, $4);
+        `,
+          [
+            clientId,
+            transaction.value,
+            transaction.type,
+            transaction.description,
+          ],
+        ),
+      ]);
+
+      await client.query("COMMIT;");
       return { account, error: null };
-    });
+    } catch (error) {
+      app.log.error(error);
+      setInterval(() => {}, 300);
+      return await this.createTransaction(clientId, transaction);
+    }
   }
 
   handleCreditTransaction(account: Account, transaction: Transaction) {
@@ -49,10 +78,6 @@ export class PostgresAccountRepository implements AccountRepository {
     }
 
     account.limit_amount = account.limit_amount - transaction.value;
-    account.transactions.push(transaction);
-    if (account.transactions.length > 10) {
-      account.transactions.shift();
-    }
     return account;
   }
 
@@ -66,27 +91,53 @@ export class PostgresAccountRepository implements AccountRepository {
     }
 
     account.balance = account.balance - transaction.value;
-    account.transactions.push(transaction);
     return account;
   }
 
   async getExtract(clientId: number) {
-    const result =
-      await db`SELECT *, now() as extract_date FROM accounts WHERE id = ${clientId};`;
+    try {
+      const [account_db, transactions_db] = await Promise.all([
+        client.query(
+          `
+        SELECT *, now() as extract_date 
+        FROM accounts
+        WHERE id = $1;
+        `,
+          [clientId],
+        ),
+        client.query(
+          `
+        SELECT value, type, description
+        FROM transactions
+        WHERE account_id = $1
+        ORDER BY date DESC
+        LIMIT 10;
+        `,
+          [clientId],
+        ),
+      ]);
 
-    if (result.length == 0) return null;
+      const { id, name, limit_amount, balance, extract_date } =
+        account_db.rows[0];
 
-    const { id, name, limit_amount, balance, transactions, extract_date } =
-      result[0];
+      const transactions: Array<Transaction> = [];
 
-    const account = new Account(
-      id,
-      name,
-      limit_amount,
-      balance,
-      transactions,
-      extract_date,
-    );
-    return account;
+      transactions_db.rows.forEach((t) => {
+        transactions.push(new Transaction(t.value, t.type, t.description));
+      });
+
+      const account = new Account(
+        id,
+        name,
+        limit_amount,
+        balance,
+        transactions,
+        extract_date,
+      );
+      return account;
+    } catch (error) {
+      setInterval(() => {}, 300);
+      return await this.getExtract(clientId);
+    }
   }
 }

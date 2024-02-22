@@ -11,7 +11,7 @@ export class Account {
     name: string,
     limit_amount: number,
     balance: number,
-    transactions: Array<Transaction>,
+    transactions?: Array<Transaction>,
     extract_date?: Date,
   ) {
     this.id = id;

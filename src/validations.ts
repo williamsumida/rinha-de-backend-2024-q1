@@ -13,7 +13,7 @@ export function validateClientId(params: any) {
 export function validateTransactionBody(body: any) {
   try {
     const transactionDataBodySchema = z.object({
-      valor: z.number().positive(),
+      valor: z.number().positive().int(),
       tipo: z.enum(["c", "d"]),
       descricao: z.string().min(1).max(10),
     });

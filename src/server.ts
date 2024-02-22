@@ -5,6 +5,7 @@ import { validateClientId, validateTransactionBody } from "./validations";
 import { errors } from "./errors";
 
 const envToLogger = {
+  level: "warn",
   transport: {
     target: "pino-pretty",
     options: {
@@ -14,7 +15,7 @@ const envToLogger = {
   },
 };
 
-const app = fastify({ logger: envToLogger });
+export const app = fastify({ logger: envToLogger });
 
 const repository = new PostgresAccountRepository();
 
@@ -25,10 +26,15 @@ app.post(
     const body = validateTransactionBody(request.body);
 
     if (id === null || body === null) {
-      return reply.code(400).send();
+      return reply.code(422).send();
     }
 
     const { valor, tipo, descricao } = body;
+
+    // gambeta
+    if (id > 5) {
+      return reply.code(404).send();
+    }
 
     const { account, error } = await repository.createTransaction(id, {
       value: valor,
@@ -56,7 +62,11 @@ app.get(
   async (request: FastifyRequest, reply: FastifyReply) => {
     const id = validateClientId(request.params);
     if (id === null) {
-      return reply.code(400).send();
+      return reply.code(422).send();
+    }
+    // gambeta
+    if (id > 5) {
+      return reply.code(404).send();
     }
 
     const account = await repository.getExtract(id);

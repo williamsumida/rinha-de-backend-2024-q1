@@ -1,12 +1,14 @@
-import postgres from "postgres";
+import { Pool, Client } from "pg";
 
 const config = {
   host: "postgres",
   port: 5432,
   database: "postgres",
-  username: "postgres",
+  user: "postgres",
   password: "123",
-  max: 20,
+  // max: 30,
 };
 
-export const db = postgres(config);
+//export const pool = new Pool(config);
+export const client = new Client(config);
+client.connect();
