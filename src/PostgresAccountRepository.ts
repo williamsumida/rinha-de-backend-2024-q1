@@ -13,7 +13,6 @@ export class PostgresAccountRepository {
     try {
       const client = await pool.connect();
       //await client.query("BEGIN ISOLATION LEVEL SERIALIZABLE;");
-      await client.query("BEGIN;");
 
       let res = null;
       if (transaction.type === "c") {
@@ -54,7 +53,6 @@ export class PostgresAccountRepository {
         ],
       );
 
-      await client.query("COMMIT;");
       client.release();
 
       const account = {
