@@ -1,27 +1,31 @@
 import fastify, { FastifyRequest, FastifyReply } from "fastify";
-import { z } from "zod";
-import { PostgresAccountRepository } from "./PostgresAccountRepository";
+import {
+  getExtract,
+  createTransaction,
+  resetDatabase,
+} from "./PostgresAccountRepository";
 import { validateClientId, validateTransactionBody } from "./validations";
-import { errors } from "./errors";
+import axios from "axios";
+axios.defaults.baseURL = "http://127.0.0.1:3000";
 
-const envToLogger = {
-  level: "error",
-  transport: {
-    target: "pino-pretty",
-    options: {
-      translateTime: "HH:MM:ss Z",
-      ignore: "pid,hostname",
-    },
-  },
-};
+//const envToLogger = {
+//  level: "error",
+//  transport: {
+//    target: "pino-pretty",
+//    options: {
+//      translateTime: "HH:MM:ss Z",
+//      ignore: "pid,hostname",
+//    },
+//  },
+//};
 
-export const app = fastify({ logger: envToLogger });
-
-const repository = new PostgresAccountRepository();
+export const app = fastify();
 
 app.post(
   "/clientes/:id/transacoes",
   async (request: FastifyRequest, reply: FastifyReply) => {
+    console.log("NEW TRANSACTION");
+    let startTime = performance.now();
     const id = validateClientId(request.params);
     const body = validateTransactionBody(request.body);
 
@@ -36,21 +40,20 @@ app.post(
       return reply.code(404).send();
     }
 
-    const { account, error } = await repository.createTransaction(id, {
-      value: valor,
-      type: tipo,
-      description: descricao,
-    });
+    const { account, error } = await createTransaction(
+      id,
+      valor,
+      tipo,
+      descricao,
+    );
 
-    if (error === errors.ACCOUNT_NOT_FOUND) {
-      return reply.code(404).send();
-    }
-
-    if (error === errors.INVALID_TRANSACTION) {
+    if (error) {
       return reply.code(422).send();
     }
 
-    reply.send({
+    let endTime = performance.now();
+    console.log(`Transaction took ${endTime - startTime} milliseconds to run.`);
+    return reply.send({
       limite: account.limit_amount,
       saldo: account.balance,
     });
@@ -60,6 +63,8 @@ app.post(
 app.get(
   "/clientes/:id/extrato",
   async (request: FastifyRequest, reply: FastifyReply) => {
+    console.log("NEW EXTRACT");
+    let startTime = performance.now();
     const id = validateClientId(request.params);
     if (id === null) {
       return reply.code(422).send();
@@ -69,21 +74,62 @@ app.get(
       return reply.code(404).send();
     }
 
-    const account = await repository.getExtract(id);
+    const account = await getExtract(id);
 
-    if (account == null) {
-      return reply.code(404).send();
-    }
-
-    reply.send(account);
+    let endTime = performance.now();
+    console.log(`Extract took ${endTime - startTime} milliseconds to run.`);
+    return reply.send(account);
   },
 );
+
+app.get("/reset", async (request: FastifyRequest, reply: FastifyReply) => {
+  return reply.send(account);
+});
 
 app
   .listen({
     host: "0.0.0.0",
     port: 3000,
   })
-  .then(() => {
-    app.log.info(`🚀 Rinha de Backend Running on port 3000!`);
+  .then(async () => {
+    console.log(`🚀 Rinha de Backend Running on port 3000!`);
+    console.log("warming up app");
+    axios.get("/clientes/1/extrato");
+    axios.get("/clientes/1/extrato");
+    axios.get("/clientes/1/extrato");
+    axios.get("/clientes/1/extrato");
+    axios.get("/clientes/1/extrato");
+    axios.get("/clientes/1/extrato");
+    axios.get("/clientes/1/extrato");
+    await axios.post("/clientes/1/transacoes", {
+      valor: 1,
+      tipo: "c",
+      descricao: "asdf",
+    });
+    await axios.post("/clientes/1/transacoes", {
+      valor: 1,
+      tipo: "d",
+      descricao: "asdf",
+    });
+    await axios.post("/clientes/1/transacoes", {
+      valor: 1,
+      tipo: "c",
+      descricao: "asdf",
+    });
+    await axios.post("/clientes/1/transacoes", {
+      valor: 1,
+      tipo: "d",
+      descricao: "asdf",
+    });
+    await axios.post("/clientes/1/transacoes", {
+      valor: 1,
+      tipo: "c",
+      descricao: "asdf",
+    });
+    await axios.post("/clientes/1/transacoes", {
+      valor: 1,
+      tipo: "d",
+      descricao: "asdf",
+    });
+    resetDatabase();
   });

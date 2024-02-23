@@ -4,6 +4,8 @@ services:
       context: .
       target: prod
     container_name: api1
+    ports:
+      - 3001:3000
     command: npm run start
     depends_on:
       - postgres
@@ -11,11 +13,13 @@ services:
       resources:
         limits:
           cpus: '0.3'
-          memory: '150MB'
+          memory: '100MB'
 
   api2: 
     <<: *api
     container_name: api2
+    ports:
+      - 3002:3000
 
 
   nginx:
@@ -32,10 +36,10 @@ services:
       resources:
         limits:
           cpus: '0.1'
-          memory: '10MB'
+          memory: '30MB'
 
   postgres:
-    image: postgres:alpine
+    image: postgres:latest
     container_name: postgres
     environment:
       - POSTGRES_PASSWORD=123
@@ -49,4 +53,4 @@ services:
       resources:
         limits:
           cpus: '0.8'
-          memory: '240MB'
+          memory: '320MB'
