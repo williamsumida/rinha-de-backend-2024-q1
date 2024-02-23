@@ -13,17 +13,16 @@ export class PostgresAccountRepository {
     try {
       const client = await pool.connect();
       //await client.query("BEGIN ISOLATION LEVEL SERIALIZABLE;");
-      //await client.query("BEGIN;");
+      await client.query("BEGIN;");
 
       let res = null;
       if (transaction.type === "c") {
         res = await client.query(`
           UPDATE accounts
           SET 
-            limit_amount = limit_amount - ${transaction.value}
+            balance = balance + ${transaction.value}
           WHERE
-            id = ${clientId} AND
-            limit_amount - ${transaction.value} >= 0
+            id = ${clientId}
           RETURNING balance, limit_amount;
         `);
       } else {
@@ -55,6 +54,7 @@ export class PostgresAccountRepository {
         ],
       );
 
+      await client.query("COMMIT;");
       client.release();
 
       const account = {

@@ -16,6 +16,7 @@ CREATE UNLOGGED TABLE transactions (
 
 CREATE INDEX idx_cov_accounts ON accounts(id) INCLUDE (limit_amount, balance);
 CREATE INDEX idx_transactions_account_id ON transactions(account_id);
+CREATE INDEX idx_transactions_account_date ON transactions(account_id, date);
 
 INSERT INTO accounts (name, limit_amount, balance)
 VALUES
