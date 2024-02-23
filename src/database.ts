@@ -6,7 +6,7 @@ const config = {
   database: "postgres",
   user: "postgres",
   password: "123",
-  max: 13,
+  max: 8,
 };
 
 export const pool = new Pool(config);

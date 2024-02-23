@@ -5,7 +5,7 @@ import { validateClientId, validateTransactionBody } from "./validations";
 import { errors } from "./errors";
 
 const envToLogger = {
-  level: "info",
+  level: "error",
   transport: {
     target: "pino-pretty",
     options: {

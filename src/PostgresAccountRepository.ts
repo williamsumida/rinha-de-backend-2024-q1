@@ -33,10 +33,15 @@ export class PostgresAccountRepository {
             balance = balance - ${transaction.value}
           WHERE
             id = ${clientId} AND
-            limit_amount < balance - ${transaction.value}
+            limit_amount > (balance - ${transaction.value}) * -1
           RETURNING balance, limit_amount;
         `);
       }
+
+      if (res.rows.length == 0) {
+        return { account: null, error: errors.INVALID_TRANSACTION };
+      }
+
       await client.query(
         `
           INSERT INTO transactions(account_id, value, type, description)
