@@ -6,9 +6,9 @@ const config = {
   database: "postgres",
   user: "postgres",
   password: "123",
-  // max: 30,
+  max: 13,
 };
 
-//export const pool = new Pool(config);
-export const client = new Client(config);
-client.connect();
+export const pool = new Pool(config);
+//export const client = new Client(config);
+//client.connect();

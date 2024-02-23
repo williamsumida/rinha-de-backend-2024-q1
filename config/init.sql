@@ -14,13 +14,13 @@ CREATE UNLOGGED TABLE transactions (
 	date TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
---CREATE INDEX idx_cov_accounts ON accounts(id) INCLUDE (limit_amount, balance);
---CREATE INDEX idx_transactions_account_id ON transactions(account_id);
+CREATE INDEX idx_cov_accounts ON accounts(id) INCLUDE (limit_amount, balance);
+CREATE INDEX idx_transactions_account_id ON transactions(account_id);
 
 INSERT INTO accounts (name, limit_amount, balance)
 VALUES
-  ('a', 1000 * 100, 0),
-  ('b', 800 * 100, 0),
-  ('c', 10000 * 100, 0),
-  ('d', 100000 * 100, 0),
-  ('e', 5000 * 100, 0);
+  ('a', 100000, 0),
+  ('b', 80000, 0),
+  ('c', 1000000, 0),
+  ('d', 10000000, 0),
+  ('e', 500000, 0);

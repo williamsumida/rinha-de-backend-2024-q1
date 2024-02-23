@@ -5,7 +5,7 @@ import { validateClientId, validateTransactionBody } from "./validations";
 import { errors } from "./errors";
 
 const envToLogger = {
-  level: "warn",
+  level: "info",
   transport: {
     target: "pino-pretty",
     options: {
@@ -75,16 +75,7 @@ app.get(
       return reply.code(404).send();
     }
 
-    const extrato = {
-      saldo: {
-        total: account?.balance,
-        data_extrato: account?.extract_date,
-        limite: account?.limit_amount,
-      },
-      ultimas_transacoes: account?.transactions,
-    };
-
-    reply.send(extrato);
+    reply.send(account);
   },
 );
 
