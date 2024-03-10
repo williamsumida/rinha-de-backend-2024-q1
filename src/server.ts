@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import fastify, { FastifyRequest, FastifyReply } from "fastify";
 import {
   getExtract,
@@ -6,7 +8,7 @@ import {
 } from "./PostgresAccountRepository";
 import { validateClientId, validateTransactionBody } from "./validations";
 import axios from "axios";
-axios.defaults.baseURL = "http://127.0.0.1:3000";
+axios.defaults.baseURL = `http://127.0.0.1:${process.env.PORT}`;
 
 //const envToLogger = {
 //  level: "error",
@@ -24,7 +26,7 @@ export const app = fastify();
 app.post(
   "/clientes/:id/transacoes",
   async (request: FastifyRequest, reply: FastifyReply) => {
-    console.log("NEW TRANSACTION");
+    //console.log("NEW TRANSACTION");
     let startTime = performance.now();
     const id = validateClientId(request.params);
     const body = validateTransactionBody(request.body);
@@ -52,7 +54,7 @@ app.post(
     }
 
     let endTime = performance.now();
-    console.log(`Transaction took ${endTime - startTime} milliseconds to run.`);
+    //console.log(`Transaction took ${endTime - startTime} milliseconds to run.`);
     return reply.send({
       limite: account.limit_amount,
       saldo: account.balance,
@@ -63,7 +65,7 @@ app.post(
 app.get(
   "/clientes/:id/extrato",
   async (request: FastifyRequest, reply: FastifyReply) => {
-    console.log("NEW EXTRACT");
+    //console.log("NEW EXTRACT");
     let startTime = performance.now();
     const id = validateClientId(request.params);
     if (id === null) {
@@ -77,19 +79,19 @@ app.get(
     const account = await getExtract(id);
 
     let endTime = performance.now();
-    console.log(`Extract took ${endTime - startTime} milliseconds to run.`);
+    //console.log(`Extract took ${endTime - startTime} milliseconds to run.`);
     return reply.send(account);
   },
 );
 
 app.get("/reset", async (request: FastifyRequest, reply: FastifyReply) => {
-  return reply.send(account);
+  return reply.send();
 });
 
 app
   .listen({
     host: "0.0.0.0",
-    port: 3000,
+    port: parseInt(process.env.PORT),
   })
   .then(async () => {
     console.log(`🚀 Rinha de Backend Running on port 3000!`);

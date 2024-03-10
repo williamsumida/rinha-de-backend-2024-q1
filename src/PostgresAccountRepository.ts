@@ -1,4 +1,4 @@
-import { client } from "./database";
+import { pool } from "./database";
 
 export async function createTransaction(
   clientId: number,
@@ -7,8 +7,9 @@ export async function createTransaction(
   description: string,
 ): Promise<any> {
   try {
-    //const client = await pool.connect();
+    const client = await pool.connect();
 
+    //await client.query("SELECT * FROM accounts FOR UPDATE;");
     let res = null;
     if (transaction_type === "c") {
       res = await client.query(`
@@ -32,17 +33,18 @@ export async function createTransaction(
     }
 
     if (res.rows.length == 0) {
+      client.release();
       return { account: null, error: true };
     }
 
     await client.query(
       `
-          INSERT INTO transactions(account_id, value, type, description)
-          VALUES(${clientId}, ${value}, '${transaction_type}', '${description}');
-        `,
+        INSERT INTO transactions(account_id, value, type, description)
+        VALUES(${clientId}, ${value}, '${transaction_type}', '${description}');
+      `,
     );
 
-    //client.release();
+    client.release();
 
     return {
       account: {
@@ -59,7 +61,7 @@ export async function createTransaction(
 
 export async function getExtract(clientId: number): Promise<any> {
   try {
-    //const client = await pool.connect();
+    const client = await pool.connect();
 
     const extract = await client.query(
       `
@@ -71,7 +73,7 @@ export async function getExtract(clientId: number): Promise<any> {
         LIMIT 10;
         `,
     );
-    //client.release();
+    client.release();
 
     const transactions: Array<any> = [];
 
@@ -99,8 +101,10 @@ export async function getExtract(clientId: number): Promise<any> {
   }
 }
 export async function resetDatabase() {
+  const client = await pool.connect();
   client.query("DELETE FROM transactions;");
   client.query(
     "UPDATE accounts SET limit_amount = 100000, balance = 0 WHERE id = 1;",
   );
+  client.release();
 }

@@ -130,3 +130,5 @@ build
 .yarn/install-state.gz
 .pnp.*
 /stress-test/user-files/results/*
+
+.DS_Store

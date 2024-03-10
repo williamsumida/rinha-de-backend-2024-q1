@@ -1,0 +1,20 @@
+name: Release
+on:
+  push:
+    tags:
+      - "v*"
+jobs:
+  release:
+    name: Publish to Dockerhub
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Get release version
+        id: get_version
+        uses: battila7/get-version-action@v2
+
+      - run: docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASS }}
+      - run: docker build -t rinha .
+      - run: docker tag rinha rnavarro/rinha-backend-2024:latest
+      - run: docker push rnavarro/rinha-backend-2024:latest
