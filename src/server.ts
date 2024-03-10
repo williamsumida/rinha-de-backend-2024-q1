@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
-import fastify, { FastifyRequest, FastifyReply } from "fastify";
+import express, { Request, Response } from "express";
 import {
   getExtract,
   createTransaction,
@@ -10,36 +10,28 @@ import { validateClientId, validateTransactionBody } from "./validations";
 import axios from "axios";
 axios.defaults.baseURL = `http://127.0.0.1:${process.env.PORT}`;
 
-//const envToLogger = {
-//  level: "error",
-//  transport: {
-//    target: "pino-pretty",
-//    options: {
-//      translateTime: "HH:MM:ss Z",
-//      ignore: "pid,hostname",
-//    },
-//  },
-//};
 
-export const app = fastify();
+export const app = express();
+
+app.use(express.json());
 
 app.post(
   "/clientes/:id/transacoes",
-  async (request: FastifyRequest, reply: FastifyReply) => {
+  async (request: Request, response: Response) => {
     //console.log("NEW TRANSACTION");
     let startTime = performance.now();
     const id = validateClientId(request.params);
     const body = validateTransactionBody(request.body);
 
     if (id === null || body === null) {
-      return reply.code(422).send();
+      return response.status(422).json();
     }
 
     const { valor, tipo, descricao } = body;
 
     // gambeta
     if (id > 5) {
-      return reply.code(404).send();
+      return response.status(404).json();
     }
 
     const { account, error } = await createTransaction(
@@ -50,12 +42,12 @@ app.post(
     );
 
     if (error) {
-      return reply.code(422).send();
+      return response.status(422).json();
     }
 
     let endTime = performance.now();
     //console.log(`Transaction took ${endTime - startTime} milliseconds to run.`);
-    return reply.send({
+    return response.json({
       limite: account.limit_amount,
       saldo: account.balance,
     });
@@ -64,28 +56,28 @@ app.post(
 
 app.get(
   "/clientes/:id/extrato",
-  async (request: FastifyRequest, reply: FastifyReply) => {
+  async (request: Request, response: Response) => {
     //console.log("NEW EXTRACT");
     let startTime = performance.now();
     const id = validateClientId(request.params);
     if (id === null) {
-      return reply.code(422).send();
+      return response.status(422).json();
     }
     // gambeta
     if (id > 5) {
-      return reply.code(404).send();
+      return response.status(404).json();
     }
 
     const account = await getExtract(id);
 
     let endTime = performance.now();
     //console.log(`Extract took ${endTime - startTime} milliseconds to run.`);
-    return reply.send(account);
+    return response.json(account);
   },
 );
 
-app.get("/reset", async (request: FastifyRequest, reply: FastifyReply) => {
-  return reply.send();
+app.get("/reset", async (request: Request, response: Response) => {
+  return response.send();
 });
 
 app
@@ -93,45 +85,45 @@ app
     host: "0.0.0.0",
     port: parseInt(process.env.PORT),
   })
-  .then(async () => {
-    console.log(`🚀 Rinha de Backend Running on port 3000!`);
-    console.log("warming up app");
-    axios.get("/clientes/1/extrato");
-    axios.get("/clientes/1/extrato");
-    axios.get("/clientes/1/extrato");
-    axios.get("/clientes/1/extrato");
-    axios.get("/clientes/1/extrato");
-    axios.get("/clientes/1/extrato");
-    axios.get("/clientes/1/extrato");
-    await axios.post("/clientes/1/transacoes", {
-      valor: 1,
-      tipo: "c",
-      descricao: "asdf",
-    });
-    await axios.post("/clientes/1/transacoes", {
-      valor: 1,
-      tipo: "d",
-      descricao: "asdf",
-    });
-    await axios.post("/clientes/1/transacoes", {
-      valor: 1,
-      tipo: "c",
-      descricao: "asdf",
-    });
-    await axios.post("/clientes/1/transacoes", {
-      valor: 1,
-      tipo: "d",
-      descricao: "asdf",
-    });
-    await axios.post("/clientes/1/transacoes", {
-      valor: 1,
-      tipo: "c",
-      descricao: "asdf",
-    });
-    await axios.post("/clientes/1/transacoes", {
-      valor: 1,
-      tipo: "d",
-      descricao: "asdf",
-    });
-    resetDatabase();
-  });
+//.then(async () => {
+//  console.log(`🚀 Rinha de Backend Running on port 3000!`);
+//  console.log("warming up app");
+//  axios.get("/clientes/1/extrato");
+//  axios.get("/clientes/1/extrato");
+//  axios.get("/clientes/1/extrato");
+//  axios.get("/clientes/1/extrato");
+//  axios.get("/clientes/1/extrato");
+//  axios.get("/clientes/1/extrato");
+//  axios.get("/clientes/1/extrato");
+//  await axios.post("/clientes/1/transacoes", {
+//    valor: 1,
+//    tipo: "c",
+//    descricao: "asdf",
+//  });
+//  await axios.post("/clientes/1/transacoes", {
+//    valor: 1,
+//    tipo: "d",
+//    descricao: "asdf",
+//  });
+//  await axios.post("/clientes/1/transacoes", {
+//    valor: 1,
+//    tipo: "c",
+//    descricao: "asdf",
+//  });
+//  await axios.post("/clientes/1/transacoes", {
+//    valor: 1,
+//    tipo: "d",
+//    descricao: "asdf",
+//  });
+//  await axios.post("/clientes/1/transacoes", {
+//    valor: 1,
+//    tipo: "c",
+//    descricao: "asdf",
+//  });
+//  await axios.post("/clientes/1/transacoes", {
+//    valor: 1,
+//    tipo: "d",
+//    descricao: "asdf",
+//  });
+//  resetDatabase();
+//});
