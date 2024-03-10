@@ -16,5 +16,5 @@ jobs:
 
       - run: docker login -u ${{ secrets.DOCKERHUB_USER }} -p ${{ secrets.DOCKERHUB_PASS }}
       - run: docker build -t rinha .
-      - run: docker tag rinha rnavarro/rinha-backend-2024:latest
-      - run: docker push rnavarro/rinha-backend-2024:latest
+      - run: docker tag rinha williamsumida/rinha-backend-2024-q1:latest
+      - run: docker push williamsumida/rinha-backend-2024-q1:latest
